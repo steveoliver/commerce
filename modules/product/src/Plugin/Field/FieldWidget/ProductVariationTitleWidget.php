@@ -115,11 +115,7 @@ class ProductVariationTitleWidget extends WidgetBase implements ContainerFactory
       '#type' => 'textfield',
       '#title' => $this->t('Label text'),
       '#default_value' => $this->getSetting('label_text'),
-      '#states' => [
-        'visible' => [
-          'input[name="fields[purchased_entity][settings_edit_form][settings][label_display]"]' => ['checked' => TRUE]
-        ]
-      ]
+      '#description' => $this->t('If label is not displayed, it will be visually hidden but still available to screen readers, so please enter a value.')
     ];
 
     return $element;
@@ -130,10 +126,10 @@ class ProductVariationTitleWidget extends WidgetBase implements ContainerFactory
    */
   public function settingsSummary() {
     $summary = [];
-    $summary[] = $this->getSetting('label_display') ? $this->t('Display label: yes') : $this->t('Display label: no');
-    if ($this->getSetting('label_display') && $this->getSetting('label_text')) {
-      $summary[] = $this->t('Label text: @text', ['@text' => $this->getSetting('label_text')]);
-    }
+    $summary[] = $this->t('Label: "@text" (@visible)', [
+      '@text' => $this->getSetting('label_text'),
+      '@visible' => $this->t($this->getSetting('label_display') ? 'visible' : 'visually hidden')
+    ]);
 
     return $summary;
   }
@@ -194,7 +190,7 @@ class ProductVariationTitleWidget extends WidgetBase implements ContainerFactory
     }
     $element['variation'] = [
       '#type' => 'select',
-      '#title' => $this->getSetting('label_display') && $this->getSetting('label_text') ? $this->getSetting('label_text') : NULL,
+      '#title' => $this->getSetting('label_text'),
       '#options' => $variation_options,
       '#required' => TRUE,
       '#default_value' => $selected_variation->id(),
@@ -203,6 +199,9 @@ class ProductVariationTitleWidget extends WidgetBase implements ContainerFactory
         'wrapper' => $form['#wrapper_id'],
       ],
     ];
+    if ($this->getSetting('label_display') == FALSE) {
+      $element['variation']['#title_display'] = 'invisible';
+    }
 
     return $element;
   }
