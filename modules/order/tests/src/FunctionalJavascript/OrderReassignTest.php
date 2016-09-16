@@ -52,7 +52,7 @@ class OrderReassignTest extends CommerceBrowserTestBase {
    */
   public function testOrderReassign() {
     $line_item = $this->createEntity('commerce_line_item', [
-      'type' => 'product_variation',
+      'type' => 'attribute_variation',
       'unit_price' => [
         'amount' => '999',
         'currency_code' => 'USD',

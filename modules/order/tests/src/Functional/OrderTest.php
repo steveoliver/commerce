@@ -17,7 +17,7 @@ class OrderTest extends OrderBrowserTestBase {
    */
   public function testCreateOrder() {
     $line_item = $this->createEntity('commerce_line_item', [
-      'type' => 'product_variation',
+      'type' => 'attribute_variation',
     ]);
     $order = $this->createEntity('commerce_order', [
       'type' => 'default',
@@ -35,7 +35,7 @@ class OrderTest extends OrderBrowserTestBase {
    */
   public function testDeleteOrder() {
     $line_item = $this->createEntity('commerce_line_item', [
-      'type' => 'product_variation',
+      'type' => 'attribute_variation',
     ]);
     $order = $this->createEntity('commerce_order', [
       'type' => 'default',
@@ -55,7 +55,7 @@ class OrderTest extends OrderBrowserTestBase {
    */
   public function testOrderPlaced() {
     $line_item = $this->createEntity('commerce_line_item', [
-      'type' => 'product_variation',
+      'type' => 'attribute_variation',
     ]);
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $this->createEntity('commerce_order', [

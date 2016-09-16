@@ -14,7 +14,7 @@ class OrderViewTest extends OrderBrowserTestBase {
    */
   public function testAdminOrderView() {
     $line_item = $this->createEntity('commerce_line_item', [
-      'type' => 'product_variation',
+      'type' => 'attribute_variation',
       'unit_price' => [
         'amount' => '999',
         'currency_code' => 'USD',
