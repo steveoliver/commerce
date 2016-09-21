@@ -11,6 +11,8 @@ payment_default:
       label: 'Authorization (Voided)'
     authorization_expired:
       label: 'Authorization (Expired)'
+    authorization_partially_captured:
+      label: 'Authorization (Partially captured)'
     capture_completed:
       label: 'Capture (Completed)'
     capture_partially_refunded:
@@ -32,6 +34,10 @@ payment_default:
       label: 'Expire payment'
       from: [authorization]
       to: authorization_expired
+    partially_capture:
+      label: 'Partially capture authorization'
+      from: [authorization, authorization_partially_captured]
+      to: authorization_partially_captured
     authorize_capture:
       label: 'Authorize and capture payment'
       from: [new]
