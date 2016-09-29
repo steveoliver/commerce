@@ -5,11 +5,14 @@
  * Defines the Order entity and associated features.
  */
 
+use Drupal\commerce_order\Entity\Order;
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Entity\OrderTypeInterface;
 use Drupal\commerce_order\Plugin\Field\FieldFormatter\PriceCalculatedFormatter;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\entity\BundleFieldDefinition;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Implements hook_theme().
@@ -66,6 +69,40 @@ function commerce_order_local_tasks_alter(&$definitions) {
 function commerce_order_field_formatter_info_alter(array &$info) {
   $info['commerce_price_calculated']['class'] = PriceCalculatedFormatter::class;
   $info['commerce_price_calculated']['provider'] = 'commerce_order';
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for user entities.
+ *
+ * - Assigns any previous guest orders to new user account.
+ */
+function commerce_order_user_insert(AccountInterface $user) {
+  $order_ids = \Drupal::entityQuery('commerce_order')
+    ->condition('mail', $user->getEmail())
+    ->execute();
+  if ($order_ids) {
+    $orders = Order::loadMultiple($order_ids);
+    foreach ($orders as $order) {
+      $order->setCustomer($user);
+      $order->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function commerce_order_commerce_order_presave(OrderInterface $order) {
+  $place_transition = $order->getState()->getWorkflow()->getTransition('place');
+  if (!$order->isNew() && empty($order->getPlacedTime()) && $place_transition) {
+    $from_states = $place_transition->getFromStates();
+    $from_state = reset($from_states);
+    $from_state = $from_state->getId();
+    $to_state = $place_transition->getToState()->getId();
+    if ($order->original->state->value == $from_state && $order->state->value == $to_state) {
+      $order->setPlacedTime(REQUEST_TIME);
+    }
+  }
 }
 
 /**
