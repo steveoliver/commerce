@@ -120,6 +120,20 @@ class OrderItem extends ContentEntityBase implements OrderItemInterface {
   /**
    * {@inheritdoc}
    */
+  public function getAdjustedUnitPrice() {
+    $this->recalculateTotalPrice();
+    if ($unit_price = $this->getUnitPrice()) {
+      $adjusted_price = $unit_price;
+      foreach ($this->getAdjustments() as $adjustment) {
+        $adjusted_price = $adjusted_price->add($adjustment->getAmount());
+      }
+      return $adjusted_price;
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function setUnitPrice(Price $unit_price) {
     $this->set('unit_price', $unit_price);
     $this->recalculateTotalPrice();
@@ -163,6 +177,21 @@ class OrderItem extends ContentEntityBase implements OrderItemInterface {
   public function getTotalPrice() {
     if (!$this->get('total_price')->isEmpty()) {
       return $this->get('total_price')->first()->toPrice();
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAdjustedTotalPrice() {
+    $this->recalculateTotalPrice();
+    if ($total_price = $this->getTotalPrice()) {
+      $adjusted_price = $total_price;
+      foreach ($this->getAdjustments() as $adjustment) {
+        $adjustment_amount = $adjustment->getAmount()->multiply($this->getQuantity());
+        $adjusted_price = $adjusted_price->add($adjustment_amount);
+      }
+      return $adjusted_price;
     }
   }
 

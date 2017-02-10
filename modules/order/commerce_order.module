@@ -6,8 +6,11 @@
  */
 
 use Drupal\commerce\BundleFieldDefinition;
+use Drupal\commerce_order\Entity\Order;
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Implements hook_theme().
@@ -52,6 +55,40 @@ function commerce_order_local_tasks_alter(&$definitions) {
   $id = 'entity.profile.user_profile_form:profile.type.customer';
   if (isset($definitions[$id])) {
     $definitions[$id]['title'] = t('Address book');
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for user entities.
+ *
+ * - Assigns any previous guest orders to new user account.
+ */
+function commerce_order_user_insert(AccountInterface $user) {
+  $order_ids = \Drupal::entityQuery('commerce_order')
+    ->condition('mail', $user->getEmail())
+    ->execute();
+  if ($order_ids) {
+    $orders = Order::loadMultiple($order_ids);
+    foreach ($orders as $order) {
+      $order->setCustomer($user);
+      $order->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function commerce_order_commerce_order_presave(OrderInterface $order) {
+  $place_transition = $order->getState()->getWorkflow()->getTransition('place');
+  if (!$order->isNew() && empty($order->getPlacedTime()) && $place_transition) {
+    $from_states = $place_transition->getFromStates();
+    $from_state = reset($from_states);
+    $from_state = $from_state->getId();
+    $to_state = $place_transition->getToState()->getId();
+    if ($order->original->state->value == $from_state && $order->state->value == $to_state) {
+      $order->setPlacedTime(REQUEST_TIME);
+    }
   }
 }
 
@@ -164,6 +201,20 @@ function commerce_order_add_order_items_field($order_type) {
 function commerce_order_views_data_alter(array &$data) {
   $data['commerce_order']['store_id']['field']['id'] = 'commerce_store';
   $data['commerce_order']['state']['filter']['id'] = 'state_machine_state';
+  $adjustment_type_filter = [
+    'title' => t('Adjustment type'),
+    'help' => t('Filters adjustments by type.'),
+    'field' => 'adjustments_type',
+    'id' => 'commerce_adjustment_type_filter',
+  ];
+  $data['commerce_order__adjustments']['commerce_adjustment_type'] = [
+    'title' => t('Adjustment type'),
+    'filter' => $adjustment_type_filter,
+  ];
+  $data['commerce_order_item__adjustments']['commerce_adjustment_type'] = [
+    'title' => t('Adjustment type'),
+    'filter' => $adjustment_type_filter,
+  ];
 }
 
 /**
