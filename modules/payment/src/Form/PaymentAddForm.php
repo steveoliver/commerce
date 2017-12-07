@@ -3,6 +3,7 @@
 namespace Drupal\commerce_payment\Form;
 
 use Drupal\commerce\EntityHelper;
+use Drupal\commerce_payment\Entity\Payment;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface;
 use Drupal\Component\Utility\Html;
@@ -201,6 +202,24 @@ class PaymentAddForm extends FormBase implements ContainerInjectionInterface {
         ];
       }
     }
+    else {
+      /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentMethodType\PaymentMethodTypeInterface[] $methodTypes */
+      $methodTypes = $selected_payment_gateway->getPlugin()->getPaymentMethodTypes();
+      $method_type_options = [];
+      foreach ($methodTypes as $methodType) {
+        $method_type_options[$methodType->getPluginId()] = $methodType->getLabel();
+      }
+      $form['payment_method_type'] = [
+        '#type' => 'radios',
+        '#title' => $this->t('Payment type'),
+        '#options' => $method_type_options,
+        '#default_value' => reset($methodTypes)->getPluginId(),
+        '#required' => TRUE,
+        '#after_build' => [
+          [get_class($this), 'clearValue'],
+        ],
+      ];
+    }
 
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [
@@ -290,8 +309,7 @@ class PaymentAddForm extends FormBase implements ContainerInjectionInterface {
     if ($payment_method = $form_state->getValue('payment_method')) {
       $values['payment_method'] = $payment_method;
     }
-    $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-    $payment = $payment_storage->create($values);
+    $payment = Payment::create($values);
 
     $form['payment'] = [
       '#type' => 'commerce_payment_gateway_form',
